@@ -1,0 +1,275 @@
+{
+  "name": "LinkedIn Post Bookmark Manager",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "linkedin-posts",
+        "responseMode": "onReceived"
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [240, 300],
+      "id": "webhook-trigger",
+      "name": "Webhook Trigger"
+    },
+    {
+      "parameters": {
+        "values": {
+          "string": [
+            {
+              "name": "debug_action",
+              "value": "={{ $json.action }}"
+            },
+            {
+              "name": "debug_id", 
+              "value": "={{ $json.id }}"
+            },
+            {
+              "name": "debug_content",
+              "value": "={{ $json.content?.text }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 2,
+      "position": [460, 300],
+      "id": "debug-incoming",
+      "name": "Debug Incoming Data"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{ $json.action }}",
+              "operation": "equal",
+              "value2": "save"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [680, 300],
+      "id": "action-router",
+      "name": "Action Router"
+    },
+    {
+      "parameters": {
+        "values": {
+          "string": [
+            {
+              "name": "contentTheme",
+              "value": "Technology & Innovation"
+            },
+            {
+              "name": "sentiment",
+              "value": "positive"
+            },
+            {
+              "name": "confidence",
+              "value": "0.8"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 2,
+      "position": [900, 200],
+      "id": "mock-enrichment",
+      "name": "Mock Enrichment"
+    },
+    {
+      "parameters": {
+        "values": {
+          "object": [
+            {
+              "name": "algoliaRecord",
+              "value": "={\n  \"objectID\": $json.id,\n  \"type\": $json.type || \"linkedin_post\",\n  \"isRepost\": $json.isRepost || false,\n  \"author\": $json.author || {},\n  \"content\": $json.content || {},\n  \"engagement\": $json.engagement || {},\n  \"metadata\": {\n    \"publishedAt\": $json.metadata?.publishedAt || Math.floor(Date.now() / 1000),\n    \"visibility\": $json.metadata?.visibility || \"public\",\n    \"platform\": \"linkedin\",\n    \"extractedAt\": $json.metadata?.extractedAt || Math.floor(Date.now() / 1000),\n    \"processedAt\": Math.floor(Date.now() / 1000)\n  },\n  \"enrichment\": {\n    \"contentTheme\": $json.contentTheme || \"General Business Discussion\",\n    \"sentiment\": $json.sentiment || \"neutral\",\n    \"confidence\": parseFloat($json.confidence || \"0.5\")\n  },\n  \"status\": \"active\"\n}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 2,
+      "position": [1120, 200],
+      "id": "algolia-formatter",
+      "name": "Algolia Record Formatter"
+    },
+    {
+      "parameters": {
+        "connectionType": "http",
+        "tool": "algolia_save_object",
+        "arguments": "={\n  \"index\": \"bookmark_manager\",\n  \"object\": $json.algoliaRecord\n}"
+      },
+      "type": "n8n-nodes-mcp.mcpClientTool",
+      "typeVersion": 1,
+      "position": [1340, 200],
+      "id": "save-to-algolia",
+      "name": "Save to Algolia",
+      "credentials": {
+        "mcpClientHttpApi": {
+          "id": "vkfpAXW4spcX2dpq",
+          "name": "Algolia MCP Server"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "values": {
+          "object": [
+            {
+              "name": "deleteRecord",
+              "value": "={\n  \"objectID\": $json.id,\n  \"status\": \"deleted\",\n  \"deletedAt\": Math.floor(Date.now() / 1000)\n}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 2,
+      "position": [900, 400],
+      "id": "delete-formatter",
+      "name": "Delete Record Formatter"
+    },
+    {
+      "parameters": {
+        "connectionType": "http",
+        "tool": "algolia_partial_update_object",
+        "arguments": "={\n  \"index\": \"bookmark_manager\",\n  \"objectID\": $json.deleteRecord.objectID,\n  \"partialUpdate\": {\n    \"status\": $json.deleteRecord.status,\n    \"deletedAt\": $json.deleteRecord.deletedAt\n  }\n}"
+      },
+      "type": "n8n-nodes-mcp.mcpClientTool",
+      "typeVersion": 1,
+      "position": [1120, 400],
+      "id": "soft-delete-algolia",
+      "name": "Soft Delete in Algolia",
+      "credentials": {
+        "mcpClientHttpApi": {
+          "id": "vkfpAXW4spcX2dpq",
+          "name": "Algolia MCP Server"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={\n  \"success\": true,\n  \"action\": $('Debug Incoming Data').item.json.debug_action,\n  \"id\": $('Debug Incoming Data').item.json.debug_id,\n  \"message\": \"Post processed successfully\"\n}"
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [1560, 300],
+      "id": "success-response",
+      "name": "Success Response"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook Trigger": {
+      "main": [
+        [
+          {
+            "node": "Debug Incoming Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Debug Incoming Data": {
+      "main": [
+        [
+          {
+            "node": "Action Router",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Action Router": {
+      "main": [
+        [
+          {
+            "node": "Mock Enrichment",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Delete Record Formatter",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mock Enrichment": {
+      "main": [
+        [
+          {
+            "node": "Algolia Record Formatter",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Algolia Record Formatter": {
+      "main": [
+        [
+          {
+            "node": "Save to Algolia",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Save to Algolia": {
+      "main": [
+        [
+          {
+            "node": "Success Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Delete Record Formatter": {
+      "main": [
+        [
+          {
+            "node": "Soft Delete in Algolia",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Soft Delete in Algolia": {
+      "main": [
+        [
+          {
+            "node": "Success Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "639cda1f-9b5d-4675-9128-8c2d98733e47",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "4e839a74f9cee9cae404b83e2a9088ce8b38f21e009880813cc56e5bb8aa4410"
+  },
+  "id": "XeMSwfCQQQTq8Jc4",
+  "tags": []
+}

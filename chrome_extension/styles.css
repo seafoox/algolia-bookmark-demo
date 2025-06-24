@@ -1,0 +1,94 @@
+/* LinkedIn Post Saver - Simplified Styles */
+.linkedin-saver-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  transition: all 0.2s ease;
+}
+
+.linkedin-saver-btn:hover {
+  background-color: rgba(0, 0, 0, 0.08);
+}
+
+.linkedin-saver-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.linkedin-saver-btn .artdeco-button__icon {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+  fill: rgba(0, 0, 0, 0.6);
+}
+
+.linkedin-saver-btn:hover .artdeco-button__icon {
+  fill: rgba(0, 0, 0, 0.9);
+}
+
+.linkedin-saver-btn[data-saved="true"] {
+  background-color: rgba(0, 123, 181, 0.05);
+}
+
+.linkedin-saver-btn[data-saved="true"]:hover {
+  background-color: rgba(0, 123, 181, 0.1);
+}
+
+.linkedin-saver-btn[data-saved="true"] .artdeco-button__icon {
+  fill: rgba(0, 123, 181, 0.8);
+}
+
+.linkedin-saver-btn .social-action-button__text {
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.25;
+}/* LinkedIn Post Saver Styles */
+.linkedin-post-saver-btn {
+  /* Inherit LinkedIn's button styles */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  transition: all 0.2s ease;
+}
+
+.linkedin-post-saver-btn:hover {
+  /* Match LinkedIn's hover behavior */
+  background-color: rgba(0, 0, 0, 0.08);
+}
+
+.linkedin-post-saver-btn:disabled {
+  /* Disabled state styling */
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.linkedin-post-saver-btn .artdeco-button__icon {
+  /* Ensure icon sizing matches other action buttons */
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+}
+
+.linkedin-post-saver-icon {
+  /* Icon color matches LinkedIn's button icons */
+  fill: rgba(0, 0, 0, 0.6);
+}
+
+.linkedin-post-saver-btn:hover .linkedin-post-saver-icon {
+  /* Darker on hover */
+  fill: rgba(0, 0, 0, 0.9);
+}
+
+.linkedin-post-saver-btn:disabled .linkedin-post-saver-icon {
+  /* Disabled icon color */
+  fill: rgba(0, 0, 0, 0.4);
+}
+
+/* Ensure proper spacing matches other action buttons */
+.linkedin-post-saver-btn .social-action-button__text {
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.25;
+}

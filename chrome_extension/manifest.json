@@ -1,0 +1,26 @@
+{
+  "manifest_version": 3,
+  "name": "LinkedIn Post Saver",
+  "version": "1.0",
+  "description": "Add save buttons to LinkedIn posts",
+  "permissions": [
+    "activeTab"
+  ],
+  "host_permissions": [
+    "https://www.linkedin.com/*"
+  ],
+  "content_scripts": [
+    {
+      "matches": ["https://www.linkedin.com/*"],
+      "js": ["content.js"],
+      "css": ["styles.css"],
+      "run_at": "document_idle"
+    }
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": ["bookmark-icon.svg"],
+      "matches": ["https://www.linkedin.com/*"]
+    }
+  ]
+}

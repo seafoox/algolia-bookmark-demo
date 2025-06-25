@@ -18,15 +18,15 @@ import {
 } from './widgets';
 
 const searchClient = algoliasearch(
-  '1QDAWL72TQ',
-  '47700f55d95d23f5a57744b9a027ea83'
+  'KHKP14DMQR',
+  '4b496fdb0b0c8d368f8dd5bc08e12483'
 );
 
 const search = instantsearch({
   searchClient,
-  indexName: 'PROD_algolia_blog',
+  indexName: 'bookmark_manager',
   routing: {
-    stateMapping: singleIndex('PROD_algolia_blog'),
+    stateMapping: singleIndex('bookmark_manager'),
   },
   insights: true,
 });

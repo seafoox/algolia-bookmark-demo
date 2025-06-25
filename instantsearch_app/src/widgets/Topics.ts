@@ -47,6 +47,6 @@ const menu = connectMenu<{ container: string }>(
 
 export const topics = menu({
   container: '[data-widget="topics"]',
-  attribute: 'categories',
+  attribute: 'aiEnriched.themes',
   limit: 10,
 });

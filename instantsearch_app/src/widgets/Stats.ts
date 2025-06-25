@@ -14,7 +14,7 @@ const statsWidget = connectHits<{ container: string }>(
     }
     const { nbHits } = results;
 
-    const resultsStats = `${formatNumber(nbHits)} articles`;
+    const resultsStats = `${formatNumber(nbHits)} items`;
 
     const stringRefinements = results
       .getRefinements()

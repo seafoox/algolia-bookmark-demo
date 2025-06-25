@@ -21,6 +21,6 @@ export const createDates = ({
 }) =>
   createDatesList(header)({
     container,
-    attribute: 'created_at_timestamp',
+    attribute: 'metadata.publishedAt',
     items: DATE_RANGES,
   });

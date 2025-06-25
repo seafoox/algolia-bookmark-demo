@@ -5,35 +5,71 @@ import { connectInfiniteHits } from 'instantsearch.js/es/connectors';
 import { Snippet, Highlight } from 'instantsearch.js/es/helpers/components';
 
 type Result = Hit<{
-  slug: string;
-  primary_category: {
-    slug: string;
-    title: string;
+  type: string;
+  isRepost: boolean;
+  author: {
+    name: string;
+    followers: number;
+    profileUrl: string;
+    imageUrl: string;
+    isCompany: boolean;
   };
-  coauthors?: Array<{
-    avatar_url: string;
-    nickname: string;
-    job_title: string;
-  }>;
-  created_at_timestamp: number;
-  cloudinary_url: string;
-  title: string;
+  content: {
+    text: string;
+    hashtags: string[];
+    mentions: Array<{
+      name: string;
+      profileUrl: string;
+    }>;
+    externalLinks: string[];
+    hasImage: boolean;
+    image?: {
+      url: string;
+      width: number | null;
+      height: number | null;
+    };
+  };
+  engagement: {
+    likes: number;
+    reposts: number;
+    comments: number;
+  };
+  metadata: {
+    publishedAt: number;
+    visibility: string;
+    platform: string;
+    extractedAt: number;
+  };
+  aiEnriched: {
+    primaryTopic: string;
+    contentType: string;
+    themes: string[];
+    language: {
+      name: string;
+      code: string;
+    };
+    aiGenerated: {
+      isLikely: boolean;
+      confidence: number;
+    };
+    confidence: number;
+  };
+  savedOn: number;
+  objectID: string;
 }>;
-
-const getBlogPostUrl = (hit: Result) =>
-  `https://algolia.com/blog/${hit.primary_category.slug}/${hit.slug}`;
 
 function createHit(
   hit: Result,
   {
     isHighlighted,
-    refinedCategory,
-  }: { isHighlighted: boolean; refinedCategory: string | undefined }
+    refinedTopic,
+  }: { isHighlighted: boolean; refinedTopic: string | undefined }
 ) {
-  const author = hit.coauthors && hit.coauthors[0];
-  const date = formatDistanceToNow(hit.created_at_timestamp * 1000, {
+  const date = formatDistanceToNow(hit.metadata.publishedAt * 1000, {
     addSuffix: true,
   }).replace('about ', '');
+
+  const totalEngagement = hit.engagement.likes + hit.engagement.reposts + hit.engagement.comments;
 
   return html`
     <li
@@ -41,63 +77,75 @@ function createHit(
         isHighlighted ? ' infinite-hits-item--highlighted' : ''
       }`}"
     >
-      <a class="card-link" href="${getBlogPostUrl(hit)}">
+      <a class="card-link" href="${hit.author.profileUrl}" target="_blank" rel="noopener">
         <article class="card">
-          <div class="card-image">
-            <img src="${hit.cloudinary_url}" alt="${hit.title}" />
-          </div>
+          ${hit.content.hasImage && hit.content.image
+            ? html`<div class="card-image">
+                <img src="${hit.content.image.url}" alt="LinkedIn post image" />
+              </div>`
+            : ''}
 
           <div class="card-content" data-layout="desktop">
             <header>
-              ${hit.primary_category
-                ? html`<span class="card-subject">
-                      ${refinedCategory || hit.primary_category.title}
-                    </span>
-                    • `
-                : ''}
+              <span class="card-subject">
+                ${refinedTopic || hit.aiEnriched?.primaryTopic}
+              </span>
+              • 
               <span class="card-timestamp">${date}</span>
 
-              <h1 class="card-title">
-                <${Highlight} attribute="title" hit=${hit} />
-              </h1>
             </header>
 
             <p class="card-description">
-              <${Snippet} attribute="content" hit=${hit} />
+              <${Snippet} attribute="content.text" hit=${hit} />
+
+              <div class="card-theme">
+              ${hit.aiEnriched?.themes.slice(0, 3).map(theme => 
+                html`<a class="badge">${theme}</a>`
+              )}
+              </div>
             </p>
 
             <footer>
-              ${author
-                ? html`<div class="card-author">
-                    <img
-                      class="card-author-avatar"
-                      src="${author.avatar_url}"
-                      alt="${author.nickname}"
-                    /><span class="card-author-name"
-                      >${author.nickname}<span class="card-author-job"
-                        >${author.job_title}</span
-                      ></span
-                    >
-                  </div>`
-                : ''}
+              <div class="card-author">
+                <img
+                  class="card-author-avatar"
+                  src="${hit.author.imageUrl}"
+                  alt="${hit.author.name}"
+                />
+                <div class="card-author-info">
+                  <span class="card-author-name">${hit.author.name}</span>
+                  ${hit.author.followers && hit.author.followers > 0
+                    ? html`<span class="card-author-job">
+                        ${hit.author.followers.toLocaleString()} followers
+                      </span>`
+                    : ''
+                  }
+                </div>
+              </div>
+              
+              <div class="card-engagement">
+                <span class="card-engagement-stats">
+                  ${hit.engagement.likes} likes • ${hit.engagement.reposts} reposts • ${hit.engagement.comments} comments
+                </span>
+              </div>
             </footer>
           </div>
 
           <div class="card-content" data-layout="mobile">
             <header>
               <h1 class="card-title">
-                <${Highlight} attribute="title" hit=${hit} />
+                <${Highlight} attribute="content.text" hit=${hit} />
               </h1>
             </header>
 
             <p class="card-mobile-footer">
-              ${hit.primary_category
-                ? html`<span class="card-subject"
-                      >${refinedCategory || hit.primary_category.title}</span
-                    >
-                    • `
-                : ''}
+              <span class="card-subject">
+                ${refinedTopic || hit.aiEnriched?.primaryTopic}
+              </span>
+              • 
               <span class="card-timestamp">${date}</span>
+              • 
+              <span class="card-engagement-mobile">${totalEngagement} interactions</span>
             </p>
           </div>
         </article>
@@ -105,6 +153,7 @@ function createHit(
     </li>
   `;
 }
+
 
 function createPlaceholderHit({ isHighlighted }: { isHighlighted: boolean }) {
   return html`
@@ -115,7 +164,11 @@ function createPlaceholderHit({ isHighlighted }: { isHighlighted: boolean }) {
     >
       <article class="card card--placeholder">
         <div class="card-image"></div>
-        <div class="card-content"></div>
+        <div class="card-content">
+          <div class="placeholder-author"></div>
+          <div class="placeholder-content"></div>
+          <div class="placeholder-engagement"></div>
+        </div>
       </article>
     </li>
   `;
@@ -177,99 +230,34 @@ const infiniteHits = connectInfiniteHits<{ container: string }>(
       return;
     }
 
-    // results is defined when not in `isFirstRender`
     results = results!;
 
     if (results.nbHits === 0) {
       render(
         html`
           <div class="infinite-hits-no-results-container">
-            <svg width="138" height="138">
-              <defs>
-                <linearGradient id="c" x1="50%" x2="50%" y1="100%" y2="0%">
-                  <stop offset="0%" stop-color="#F5F5FA" />
-                  <stop offset="100%" stop-color="#FFF" />
-                </linearGradient>
-                <path
-                  id="b"
-                  d="M68.71 114.25a45.54 45.54 0 1 1 0-91.08 45.54 45.54 0 0 1 0 91.08z"
-                />
-                <filter
-                  id="a"
-                  width="140.6%"
-                  height="140.6%"
-                  x="-20.3%"
-                  y="-15.9%"
-                  filterUnits="objectBoundingBox"
-                >
-                  <feOffset
-                    dy="4"
-                    in="SourceAlpha"
-                    result="shadowOffsetOuter1"
-                  />
-                  <feGaussianBlur
-                    in="shadowOffsetOuter1"
-                    result="shadowBlurOuter1"
-                    stdDeviation="5.5"
-                  />
-                  <feColorMatrix
-                    in="shadowBlurOuter1"
-                    result="shadowMatrixOuter1"
-                    values="0 0 0 0 0.145098039 0 0 0 0 0.17254902 0 0 0 0 0.380392157 0 0 0 0.15 0"
-                  />
-                  <feOffset
-                    dy="2"
-                    in="SourceAlpha"
-                    result="shadowOffsetOuter2"
-                  />
-                  <feGaussianBlur
-                    in="shadowOffsetOuter2"
-                    result="shadowBlurOuter2"
-                    stdDeviation="1.5"
-                  />
-                  <feColorMatrix
-                    in="shadowBlurOuter2"
-                    result="shadowMatrixOuter2"
-                    values="0 0 0 0 0.364705882 0 0 0 0 0.392156863 0 0 0 0 0.580392157 0 0 0 0.2 0"
-                  />
-                  <feMerge>
-                    <feMergeNode in="shadowMatrixOuter1" />
-                    <feMergeNode in="shadowMatrixOuter2" />
-                  </feMerge>
-                </filter>
-                <linearGradient id="d" x1="50%" x2="50%" y1="0%" y2="100%">
-                  <stop offset="0%" stop-color="#7354AF" />
-                  <stop offset="100%" stop-color="#6779E3" />
-                </linearGradient>
-              </defs>
+            <svg
+              role="img"
+              aria-labelledby="no-results-title"
+              viewBox="0 0 64 64"
+              class="infinite-hits-no-results-illustration"
+            >
+              <title id="no-results-title">No results illustration</title>
               <g fill="none" fill-rule="evenodd">
-                <circle
-                  cx="68.85"
-                  cy="68.85"
-                  r="68.85"
-                  fill="#6878E1"
-                  opacity=".07"
-                />
-                <circle
-                  cx="68.85"
-                  cy="68.85"
-                  r="52.95"
-                  fill="#6877E1"
-                  opacity=".08"
-                />
-                <use fill="#000" filter="url(#a)" xlink:href="#b" />
-                <use fill="url(#c)" xlink:href="#b" />
-                <path
-                  d="M32.01 32.98c5-5 5.03-13.06.07-18.01a12.73 12.73 0 0 0-18 .07c-5 4.99-5.03 13.05-.07 18a12.73 12.73 0 0 0 18-.06zm2.5 2.5a16.29 16.29 0 0 1-23.02.08 16.29 16.29 0 0 1 .08-23.03 16.28 16.28 0 0 1 23.03-.08 16.28 16.28 0 0 1-.08 23.03zm1.08-1.08l-2.15 2.15 8.6 8.6 2.16-2.14-8.6-8.6z"
-                  fill="url(#d)"
-                  transform="translate(44 42.46)"
-                />
+                <g transform="translate(2 2)" stroke-width="2" stroke="currentColor">
+                  <circle cx="20" cy="20" r="20"/>
+                  <path d="m35.5 35.5 8.485 8.485"/>
+                </g>
+                <g fill="currentColor">
+                  <circle cx="34" cy="50" r="2"/>
+                  <circle cx="50" cy="50" r="2"/>
+                  <circle cx="50" cy="34" r="2"/>
+                </g>
               </g>
             </svg>
-
             <p class="infinite-hits-no-results-paragraph">
-              Sorry, we can't find any
-              matches${results.query ? ` for "${results.query}"` : ''}.
+              Sorry, we can't find any LinkedIn posts
+              ${results.query ? ` matching "${results.query}"` : ''}.
             </p>
           </div>
         `,
@@ -286,26 +274,26 @@ const infiniteHits = connectInfiniteHits<{ container: string }>(
       end: results.hitsPerPage * results.page + items.length - hitsOffset,
     };
 
-    const refinedCategory = ((facet) => {
-      const category = facet && facet.data.find(({ isRefined }) => isRefined);
-      return category ? category.name : undefined;
-    })(results.hierarchicalFacets.find(({ name }) => name === 'categories'));
+    const refinedTopic = ((facet) => {
+      const topic = facet && facet.data.find(({ isRefined }) => isRefined);
+      return topic ? topic.name : undefined;
+    })(results.hierarchicalFacets.find(({ name }) => name === 'aiEnriched.primaryTopic'));
 
     render(
       html`
         <div class="previous-hits">
           <p class="previous-hits-message">
             Showing ${hitsWindow.start} - ${hitsWindow.end} out of
-            ${results.nbHits} articles
+            ${results.nbHits} LinkedIn posts
           </p>
-          <button class="previous-hits-button">Show previous articles</button>
+          <button class="previous-hits-button">Show previous posts</button>
         </div>
         <ol class="ais-InfiniteHits-list">
           ${items.map((hit, index) =>
-            createHit(hit as unknown as Result, {
+            createHit(hit as Result, {
               isHighlighted:
                 results.nbHits !== 3 && (index === 0 || results.nbHits === 2),
-              refinedCategory,
+              refinedTopic,
             })
           )}
         </ol>
@@ -313,7 +301,7 @@ const infiniteHits = connectInfiniteHits<{ container: string }>(
         ${results.nbHits > 0 && isLastPage
           ? html`
               <div class="infinite-hits-end">
-                <p>${results.nbHits} articles shown</p>
+                <p>${results.nbHits} LinkedIn posts shown</p>
               </div>
             `
           : ''}

@@ -2,6 +2,8 @@
 
 Transform your LinkedIn saved posts into a powerful, searchable knowledge base! This demo project was built and presented during the [Algolia DevBit Summer Edition, 2025](https://events.ringcentral.com/events/algolia-devbit-summer/registration) event, showcasing how to build an AI-powered bookmark manager using Algolia's search capabilities, n8n workflows, and modern web technologies.
 
+> 📺 **Watch the full presentation** (YouTube video available soon)
+
 ![Demo Screenshot](assets/bookmark_manager_preview.jpg?raw=true)
 
 ## 🎯 What it does
@@ -14,6 +16,12 @@ Transform your LinkedIn saved posts into a powerful, searchable knowledge base! 
 
 ## 🏗️ Architecture
 ![App overview](assets/app_overview.jpg?raw=true)
+
+## 📦 chrome extension
+![chrome extension](assets/chrome_extension_preview.jpg?raw=true)
+
+## 🧩 n8n workflow
+![n8n workflow](assets/n8n_workflow_preview.jpg?raw=true)
 
 ## 🤝 Contributing
 

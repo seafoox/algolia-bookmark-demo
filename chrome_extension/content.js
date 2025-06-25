@@ -127,75 +127,75 @@ class LinkedInPostSaver {
   }
 
   setupButtonHandler(button, post, postId, initialSaved) {
-    let isSaved = initialSaved;
+  let isSaved = initialSaved;
+  
+  button.addEventListener('click', async (e) => {
+    e.preventDefault();
+    e.stopPropagation();
     
-    button.addEventListener('click', async (e) => {
-      e.preventDefault();
-      e.stopPropagation();
+    const textEl = button.querySelector('.social-action-button__text');
+    const originalText = textEl.textContent;
+    
+    // Set loading state
+    textEl.textContent = isSaved ? 'Removing...' : 'Saving...';
+    button.disabled = true;
+    
+    try {
+      const action = isSaved ? 'remove' : 'save';
+      let webhookData;
       
-      const textEl = button.querySelector('.social-action-button__text');
-      const originalText = textEl.textContent;
-      
-      // Set loading state
-      textEl.textContent = isSaved ? 'Removing...' : 'Saving...';
-      button.disabled = true;
-      
-      try {
-        const action = isSaved ? 'remove' : 'save';
-        let webhookData;
-        
-        if (isSaved) {
-          // Remove action - only send action and post ID
-          webhookData = {
-            action: 'remove',
-            payload: {
-              id: postId
-            }
-          };
-        } else {
-          // Save action - send action and full post data
-          const postData = this.extractPostData(post);
-          webhookData = {
-            action: 'save',
-            payload: postData
-          };
-        }
-        
-        const response = await this.sendWebhook(webhookData);
-        
-        // Only update state if server confirms success
-        if (response[0]?.output?.success && response[0]?.output?.received === action) {
-          if (isSaved) {
-            this.removeFromStorage(postId);
-            this.updateButton(button, false);
-            isSaved = false;
-            textEl.textContent = 'Removed!';
-          } else {
-            this.saveToStorage(postId);
-            this.updateButton(button, true);
-            isSaved = true;
-            textEl.textContent = 'Saved!';
+      if (isSaved) {
+        // Remove action - only send action and post ID
+        webhookData = {
+          action: 'remove',
+          payload: {
+            id: postId
           }
-          
-          // Reset to normal state
-          setTimeout(() => {
-            textEl.textContent = isSaved ? 'Saved' : 'Save';
-            button.disabled = false;
-          }, 1000);
+        };
+      } else {
+        // Save action - send action and full post data
+        const postData = this.extractPostData(post);
+        webhookData = {
+          action: 'save',
+          payload: postData
+        };
+      }
+      
+      const response = await this.sendWebhook(webhookData);
+      
+      // 🔧 FIX: Changed 'received' to 'action' to match webhook response
+      if (response[0]?.output?.success && response[0]?.output?.action === action) {
+        if (isSaved) {
+          this.removeFromStorage(postId);
+          this.updateButton(button, false);
+          isSaved = false;
+          textEl.textContent = 'Removed!';
         } else {
-          throw new Error(`${action} action not confirmed by server`);
+          this.saveToStorage(postId);
+          this.updateButton(button, true);
+          isSaved = true;
+          textEl.textContent = 'Saved!';
         }
         
-      } catch (error) {
-        console.error('Action failed:', error);
-        textEl.textContent = 'Error';
+        // Reset to normal state
         setTimeout(() => {
-          textEl.textContent = originalText;
+          textEl.textContent = isSaved ? 'Saved' : 'Save';
           button.disabled = false;
-        }, 2000);
+        }, 1000);
+      } else {
+        throw new Error(`${action} action not confirmed by server`);
       }
-    });
-  }
+      
+    } catch (error) {
+      console.error('Action failed:', error);
+      textEl.textContent = 'Error';
+      setTimeout(() => {
+        textEl.textContent = originalText;
+        button.disabled = false;
+      }, 2000);
+    }
+  });
+}
 
   extractPostId(post) {
     if (!post) return `linkedin_post_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
@@ -284,40 +284,86 @@ class LinkedInPostSaver {
   }
 
   extractContent(post, cleanText) {
-    const contentEl = post.querySelector('.update-components-text');
-    const text = contentEl ? cleanText(contentEl.textContent) : '';
-    
-    const hashtags = Array.from(post.querySelectorAll('a[href*="hashtag"]'))
-      .map(el => {
-        const tag = cleanText(el.textContent);
-        return tag.startsWith('#') ? tag.substring(1) : tag;
-      })
-      .filter(tag => tag && tag !== '');
-    
-    const mentions = Array.from(post.querySelectorAll('a[href*="/in/"]'))
-      .map(el => ({
-        name: cleanText(el.textContent),
-        profileUrl: el.getAttribute('href')
-      }))
-      .filter(m => m.name && !m.name.includes('#') && m.name !== '' && !m.name.match(/^\d+(st|nd|rd|th)$/));
-    
-    const externalLinks = Array.from(post.querySelectorAll('a[href^="https://lnkd.in"]'))
-      .map(el => ({
-        displayUrl: cleanText(el.textContent),
-        url: el.getAttribute('href')
-      }))
-      .filter(link => link.displayUrl && link.url);
-    
-    const imgEl = post.querySelector('.update-components-image__image');
-    const hasImage = !!imgEl;
-    const image = imgEl ? {
+  const contentEl = post.querySelector('.update-components-text');
+  const text = contentEl ? cleanText(contentEl.textContent) : '';
+  
+  const hashtags = Array.from(post.querySelectorAll('a[href*="hashtag"]'))
+    .map(el => {
+      const tag = cleanText(el.textContent);
+      return tag.startsWith('#') ? tag.substring(1) : tag;
+    })
+    .filter(tag => tag && tag !== '');
+  
+  const mentions = Array.from(post.querySelectorAll('a[href*="/in/"]'))
+    .map(el => ({
+      name: cleanText(el.textContent),
+      profileUrl: el.getAttribute('href')
+    }))
+    .filter(m => m.name && !m.name.includes('#') && m.name !== '' && !m.name.match(/^\d+(st|nd|rd|th)$/));
+  
+  const externalLinks = Array.from(post.querySelectorAll('a[href^="https://lnkd.in"]'))
+    .map(el => ({
+      displayUrl: cleanText(el.textContent),
+      url: el.getAttribute('href')
+    }))
+    .filter(link => link.displayUrl && link.url);
+  
+  // Check for regular image first (takes priority)
+  const imgEl = post.querySelector('.update-components-image__image');
+  let hasImage = !!imgEl;
+  let image = null;
+  
+  if (imgEl) {
+    // Regular image found - use it
+    image = {
       url: imgEl.getAttribute('src'),
       width: parseInt(imgEl.getAttribute('width')) || null,
       height: parseInt(imgEl.getAttribute('height')) || null
-    } : null;
-    
-    return { text, hashtags, mentions, externalLinks, hasImage, image };
+    };
+  } else {
+    // No regular image, check for article image
+    const articleContainer = post.querySelector('.update-components-article-first-party');
+    if (articleContainer) {
+      const articleImg = articleContainer.querySelector('.update-components-article-first-party__image');
+      if (articleImg) {
+        hasImage = true;
+        image = {
+          url: articleImg.getAttribute('src') || '',
+          width: null,
+          height: null
+        };
+      }
+    } else {
+      // No regular image or article image, check for video thumbnail
+      const videoContainer = post.querySelector('.update-components-linkedin-video');
+      if (videoContainer) {
+        hasImage = true;
+        
+        // Try to get thumbnail from video poster attribute
+        const videoEl = videoContainer.querySelector('video[poster]');
+        let thumbnailUrl = videoEl?.getAttribute('poster');
+        
+        // If no poster attribute, try background-image style
+        if (!thumbnailUrl) {
+          const posterBg = videoContainer.querySelector('.vjs-poster-background');
+          if (posterBg) {
+            const bgStyle = posterBg.getAttribute('style');
+            const urlMatch = bgStyle?.match(/background-image:\s*url\(["']?([^"')]+)["']?\)/);
+            thumbnailUrl = urlMatch ? urlMatch[1] : '';
+          }
+        }
+        
+        image = {
+          url: thumbnailUrl || '',
+          width: null,
+          height: null
+        };
+      }
+    }
   }
+  
+  return { text, hashtags, mentions, externalLinks, hasImage, image };
+}
 
   extractEngagement(post) {
     const likeEl = post.querySelector('.social-details-social-counts__social-proof-fallback-number');

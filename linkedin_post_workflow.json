@@ -1,275 +1,458 @@
 {
-  "name": "LinkedIn Post Bookmark Manager",
+  "name": "Linkedin Bookmark manager (Ngrok)",
   "nodes": [
     {
       "parameters": {
         "httpMethod": "POST",
-        "path": "linkedin-posts",
-        "responseMode": "onReceived"
+        "path": "8aa91f5a-0935-48d3-bdce-4e1b7ce76634",
+        "responseMode": "responseNode",
+        "options": {}
       },
       "type": "n8n-nodes-base.webhook",
-      "typeVersion": 1,
-      "position": [240, 300],
-      "id": "webhook-trigger",
-      "name": "Webhook Trigger"
-    },
-    {
-      "parameters": {
-        "values": {
-          "string": [
-            {
-              "name": "debug_action",
-              "value": "={{ $json.action }}"
-            },
-            {
-              "name": "debug_id", 
-              "value": "={{ $json.id }}"
-            },
-            {
-              "name": "debug_content",
-              "value": "={{ $json.content?.text }}"
-            }
-          ]
-        }
-      },
-      "type": "n8n-nodes-base.set",
       "typeVersion": 2,
-      "position": [460, 300],
-      "id": "debug-incoming",
-      "name": "Debug Incoming Data"
-    },
-    {
-      "parameters": {
-        "conditions": {
-          "string": [
-            {
-              "value1": "={{ $json.action }}",
-              "operation": "equal",
-              "value2": "save"
-            }
-          ]
-        }
-      },
-      "type": "n8n-nodes-base.if",
-      "typeVersion": 1,
-      "position": [680, 300],
-      "id": "action-router",
-      "name": "Action Router"
-    },
-    {
-      "parameters": {
-        "values": {
-          "string": [
-            {
-              "name": "contentTheme",
-              "value": "Technology & Innovation"
-            },
-            {
-              "name": "sentiment",
-              "value": "positive"
-            },
-            {
-              "name": "confidence",
-              "value": "0.8"
-            }
-          ]
-        }
-      },
-      "type": "n8n-nodes-base.set",
-      "typeVersion": 2,
-      "position": [900, 200],
-      "id": "mock-enrichment",
-      "name": "Mock Enrichment"
-    },
-    {
-      "parameters": {
-        "values": {
-          "object": [
-            {
-              "name": "algoliaRecord",
-              "value": "={\n  \"objectID\": $json.id,\n  \"type\": $json.type || \"linkedin_post\",\n  \"isRepost\": $json.isRepost || false,\n  \"author\": $json.author || {},\n  \"content\": $json.content || {},\n  \"engagement\": $json.engagement || {},\n  \"metadata\": {\n    \"publishedAt\": $json.metadata?.publishedAt || Math.floor(Date.now() / 1000),\n    \"visibility\": $json.metadata?.visibility || \"public\",\n    \"platform\": \"linkedin\",\n    \"extractedAt\": $json.metadata?.extractedAt || Math.floor(Date.now() / 1000),\n    \"processedAt\": Math.floor(Date.now() / 1000)\n  },\n  \"enrichment\": {\n    \"contentTheme\": $json.contentTheme || \"General Business Discussion\",\n    \"sentiment\": $json.sentiment || \"neutral\",\n    \"confidence\": parseFloat($json.confidence || \"0.5\")\n  },\n  \"status\": \"active\"\n}"
-            }
-          ]
-        }
-      },
-      "type": "n8n-nodes-base.set",
-      "typeVersion": 2,
-      "position": [1120, 200],
-      "id": "algolia-formatter",
-      "name": "Algolia Record Formatter"
-    },
-    {
-      "parameters": {
-        "connectionType": "http",
-        "tool": "algolia_save_object",
-        "arguments": "={\n  \"index\": \"bookmark_manager\",\n  \"object\": $json.algoliaRecord\n}"
-      },
-      "type": "n8n-nodes-mcp.mcpClientTool",
-      "typeVersion": 1,
-      "position": [1340, 200],
-      "id": "save-to-algolia",
-      "name": "Save to Algolia",
-      "credentials": {
-        "mcpClientHttpApi": {
-          "id": "vkfpAXW4spcX2dpq",
-          "name": "Algolia MCP Server"
-        }
-      }
-    },
-    {
-      "parameters": {
-        "values": {
-          "object": [
-            {
-              "name": "deleteRecord",
-              "value": "={\n  \"objectID\": $json.id,\n  \"status\": \"deleted\",\n  \"deletedAt\": Math.floor(Date.now() / 1000)\n}"
-            }
-          ]
-        }
-      },
-      "type": "n8n-nodes-base.set",
-      "typeVersion": 2,
-      "position": [900, 400],
-      "id": "delete-formatter",
-      "name": "Delete Record Formatter"
-    },
-    {
-      "parameters": {
-        "connectionType": "http",
-        "tool": "algolia_partial_update_object",
-        "arguments": "={\n  \"index\": \"bookmark_manager\",\n  \"objectID\": $json.deleteRecord.objectID,\n  \"partialUpdate\": {\n    \"status\": $json.deleteRecord.status,\n    \"deletedAt\": $json.deleteRecord.deletedAt\n  }\n}"
-      },
-      "type": "n8n-nodes-mcp.mcpClientTool",
-      "typeVersion": 1,
-      "position": [1120, 400],
-      "id": "soft-delete-algolia",
-      "name": "Soft Delete in Algolia",
-      "credentials": {
-        "mcpClientHttpApi": {
-          "id": "vkfpAXW4spcX2dpq",
-          "name": "Algolia MCP Server"
-        }
-      }
+      "position": [
+        20,
+        620
+      ],
+      "id": "5fe56acd-2288-40ba-8283-a5501b5e0c03",
+      "name": "Webhook",
+      "webhookId": "8aa91f5a-0935-48d3-bdce-4e1b7ce76634"
     },
     {
       "parameters": {
         "respondWith": "json",
-        "responseBody": "={\n  \"success\": true,\n  \"action\": $('Debug Incoming Data').item.json.debug_action,\n  \"id\": $('Debug Incoming Data').item.json.debug_id,\n  \"message\": \"Post processed successfully\"\n}"
+        "responseBody": "={\n  \"success\": \"{{ $json.output.success }}\",\n  \"action\": \"{{ $json.output.action }}\"\n}",
+        "options": {}
       },
       "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.4,
+      "position": [
+        1720,
+        500
+      ],
+      "id": "953a8407-7ca1-4baa-a015-bfe18e939d9d",
+      "name": "Respond to Webhook",
+      "alwaysOutputData": false
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.body.action }}",
+                    "rightValue": "save",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "4177b4da-a703-44f2-b548-66158adc8a30"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Save"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "2021dd72-64fc-4aa8-8e38-cc93b839b909",
+                    "leftValue": "={{ $json.body.action }}",
+                    "rightValue": "remove",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Remove"
+            }
+          ]
+        },
+        "options": {
+          "allMatchingOutputs": false
+        }
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [
+        200,
+        620
+      ],
+      "id": "d7151c1c-d49a-42d8-b72e-ffdb8a6130cf",
+      "name": "Switch",
+      "alwaysOutputData": false,
+      "notesInFlow": false
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=You are an expert content classifier helping enrich bookmarks from LinkedIn posts. Analyze the post content and return structured metadata in valid JSON format\n\n---\n\n### Fields to Extract\n\n1. **primaryTopic** — Choose ONE from:\n   - AI & Machine Learning\n   - Data & Analytics\n   - Software & Engineering\n   - Product & Design\n   - Marketing & Growth\n   - Business Strategy\n   - Career & Hiring\n   - Leadership & Management\n   - Startups & Funding\n   - Personal Development\n   - Networking & Community\n   - Future of Work\n   - Company Culture\n   - News & Trends\n\n2. **contentType** — Choose ONE from:\n   - Personal Story\n   - Thought Leadership\n   - Industry Insight\n   - How-To / Educational\n   - Company News\n   - Product Announcement\n   - Event Recap\n   - Job Opportunity\n   - Trend Analysis\n   - Opinion Piece\n\n3. **themes** — Extract up to **3 relevant hashtags** that capture the key themes or subtopics of the content.\n   - Format: `#kebab-case` (lowercase, hyphen-separated)\n   - Do NOT repeat the `primaryTopic`\n   - Examples: `#remote-work`, `#gen-ai`, `#cyber-security`, `#founder-life`, `#mental-health`\n\n4. **language** — Detect the main language of the content.\n   - Choose from: English (`en`), French (`fr`), or German (`de`)\n   - Return both the full name and language code\n\n5. **aiGenerated** — Estimate whether the content was likely written with help from an AI assistant (e.g. ChatGPT, Claude).\n   - If confidence > 0.80, set `isLikely` to `true`\n   - Always include a confidence score (float between 0.0–1.0)\n\n6. **confidence** — Overall confidence score (float between 0.0–1.0) for your classification accuracy across all fields\n\n---\n\n### 📥 Input\n\n**Content to classify:**  \n`{{ $json.body.payload.content.text }}`\n\n**Optional hashtags for context (if available):**  \n`{{ $json.body.payload.content.hashtags.join(', ') }}`",
+        "hasOutputParser": true,
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2,
+      "position": [
+        640,
+        0
+      ],
+      "id": "0f859494-400c-4273-a03e-997386e038f3",
+      "name": "AI Data Enrichement"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=You are an AI agent inside an n8n workflow. Your task is to route a request to the correct Algolia MCP tool based on the <action> field. Follow the instructions below precisely.\n\n---\n\n### Workflow Steps\n0. On the \"bookmark_manager\" index\n1. Read the <action> value from the input JSON: \"{{ $json.body.action }}\"\n\n2. Select the appropriate Algolia tool:\n   - If the action is \"save\", use the saveObject tool\n   - If the action is \"remove\", use the partialUpdateObject tool\n     - update the attibute \"isDeleted: true\"\n     - make sure the objectID value is a string\n\n3. Call the selected tool with the following parameters:\n   - Use the full \"payload\" JSON as the requestBody\n\n4. Handle unsupported or missing actions:\n   - If the action is not \"save\" or \"remove\", return the following message:\n     \"Unsupported or missing action: '<action>'\"\n\n<input JSON payload>\n{{ JSON.stringify($json.body.payload) }}\n</input JSON payload>  \n\nNote:\n- Return success: false, with the error message in the error output attibute",
+        "hasOutputParser": true,
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2,
+      "position": [
+        1360,
+        500
+      ],
+      "id": "c085e9df-2791-4b3f-b3f6-a942ccdbc294",
+      "name": "AI Agent - Interact w/t Algolia"
+    },
+    {
+      "parameters": {
+        "jsonSchemaExample": "{\n  \"primaryTopic\": \"AI & Machine Learning\",\n  \"contentType\": \"Thought Leadership\",\n  \"themes\": [\"#gen-ai\", \"#future-of-work\"],\n  \"language\": {\n    \"name\": \"English\",\n    \"code\": \"en\"\n  },\n  \"aiGenerated\": {\n    \"isLikely\": true,\n    \"confidence\": 0.91\n  },\n  \"confidence\": 0.87\n}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        840,
+        200
+      ],
+      "id": "2d763e1c-040b-4070-b53c-472695574166",
+      "name": "JSON Output (1)"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "claude-sonnet-4-20250514",
+          "cachedResultName": "Claude 4 Sonnet"
+        },
+        "options": {
+          "temperature": 0.2
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatAnthropic",
+      "typeVersion": 1.3,
+      "position": [
+        580,
+        200
+      ],
+      "id": "0919cabb-9a3b-4c44-ac38-1e54339789bc",
+      "name": "Claude 4 Sonnet (1)",
+      "credentials": {
+        "anthropicApi": {
+          "id": "zy5mRLfZluIigAq0",
+          "name": "[Alex] Algolia Anthropic account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "claude-3-5-sonnet-20241022",
+          "mode": "list",
+          "cachedResultName": "Claude Sonnet 3.5 (New)"
+        },
+        "options": {
+          "maxTokensToSample": 4096
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatAnthropic",
+      "typeVersion": 1.3,
+      "position": [
+        1300,
+        700
+      ],
+      "id": "bfe6d564-264a-43c6-a741-9f766451ef78",
+      "name": "Clause 4 Sonnet (2)",
+      "credentials": {
+        "anthropicApi": {
+          "id": "zy5mRLfZluIigAq0",
+          "name": "[Alex] Algolia Anthropic account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sseEndpoint": "https://4bb2-88-125-182-173.ngrok-free.app/sse",
+        "include": "selected",
+        "includeTools": [
+          "partialUpdateObject",
+          "saveObject"
+        ]
+      },
+      "type": "@n8n/n8n-nodes-langchain.mcpClientTool",
       "typeVersion": 1,
-      "position": [1560, 300],
-      "id": "success-response",
-      "name": "Success Response"
+      "position": [
+        1460,
+        700
+      ],
+      "id": "0e470d33-bf59-4f5e-92c1-fcd349fbf5fc",
+      "name": "Algolia MCP (2)"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        1120,
+        160
+      ],
+      "id": "0e76955e-2766-481c-92cf-97a5f5fb0f45",
+      "name": "Merge"
+    },
+    {
+      "parameters": {
+        "jsCode": "// LinkedIn Post AI Enrichment Merger\n// Use this in a Code node in n8n\n\n// Get input data\nconst inputData = $input.all();\n\n// Validate input structure\nif (!inputData || inputData.length < 2) {\n  console.log('Invalid input: Expected array with at least 2 items');\n  return inputData; // Return original data if structure is wrong\n}\n\ntry {\n  // Extract AI enrichment and webhook data\n  const aiEnrichment = inputData[0]?.json?.output;\n  const webhookData = inputData[1]?.json?.body;\n  \n  // Validate required data exists\n  if (!aiEnrichment || !webhookData?.payload) {\n    console.log('Missing AI enrichment or webhook payload data');\n    return inputData;\n  }\n  \n  // Transform the original payload\n  const originalPayload = webhookData.payload;\n  \n  // Rename id to objectID and merge with AI enrichment\n  const transformedPayload = {\n    ...originalPayload,\n    objectID: originalPayload.id, // Rename id to objectID\n    aiEnriched: {\n      primaryTopic: aiEnrichment.primaryTopic,\n      contentType: aiEnrichment.contentType,\n      themes: aiEnrichment.themes || [],\n      language: aiEnrichment.language || { name: \"Unknown\", code: \"unknown\" },\n      aiGenerated: aiEnrichment.aiGenerated || { isLikely: false, confidence: 0 },\n      confidence: aiEnrichment.confidence || 0\n    },\n    savedOn: new Date().getTime()\n  };\n  \n  // Remove the original id field since we renamed it to objectID\n  delete transformedPayload.id;\n  \n  // Create the final output structure\n  const result = {\n    body: {\n      ...webhookData,\n      payload: transformedPayload\n    },\n    webhookUrl: webhookData.webhookUrl || inputData[1]?.json?.webhookUrl,\n    executionMode: webhookData.executionMode || inputData[1]?.json?.executionMode\n  };\n  \n  console.log('✅ Successfully transformed LinkedIn post with AI enrichment');\n  console.log(`📊 Primary Topic: ${aiEnrichment.primaryTopic}`);\n  console.log(`🎯 Content Type: ${aiEnrichment.contentType}`);\n  console.log(`🏷️ Themes: ${aiEnrichment.themes?.join(', ')}`);\n  \n  return [result];\n  \n} catch (error) {\n  console.error('❌ Error transforming data:', error.message);\n  return inputData; // Return original data on error\n}"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1280,
+        160
+      ],
+      "id": "d9fda36c-e42c-4807-863e-3865b409f8d0",
+      "name": "Reshape JSON"
+    },
+    {
+      "parameters": {
+        "content": "## Receive the bookmark item",
+        "height": 240,
+        "width": 400,
+        "color": 6
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -40,
+        540
+      ],
+      "id": "de758cca-d270-433e-ab40-795573ccb8cc",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "content": "## Enriche the item thanks to AI",
+        "height": 420,
+        "width": 980,
+        "color": 4
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        500,
+        -60
+      ],
+      "id": "caa58a04-5443-48f0-a21e-2883dfcfaa48",
+      "name": "Sticky Note1"
+    },
+    {
+      "parameters": {
+        "content": "## Index to Algolia",
+        "height": 420,
+        "width": 720,
+        "color": 5
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        1220,
+        420
+      ],
+      "id": "6d5f5410-0965-4875-b4e9-fbafd516e3ee",
+      "name": "Sticky Note2"
+    },
+    {
+      "parameters": {
+        "schemaType": "manual",
+        "inputSchema": "{\n\t\"type\": \"object\",\n\t\"properties\": {\n\t\t\"success\": {\n\t\t\t\"type\": \"boolean\"\n\t\t},\n\t\t\"action\": {\n\t\t\t\"type\": \"string\",\n\t\t\t\"enum\": [\"save\", \"remove\"]\n\t\t},\n\t\t\"error\": {\n\t\t\t\"type\": \"string\"\n\t\t}\n\t},\n\t\"required\": [\"success\", \"action\"],\n\t\"additionalProperties\": false\n}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        1620,
+        680
+      ],
+      "id": "ff0cf45a-4b8f-43d5-93dd-3f7092a5230d",
+      "name": "Structured Output Parser"
     }
   ],
   "pinData": {},
   "connections": {
-    "Webhook Trigger": {
+    "Webhook": {
       "main": [
         [
           {
-            "node": "Debug Incoming Data",
+            "node": "Switch",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Debug Incoming Data": {
+    "Switch": {
       "main": [
         [
           {
-            "node": "Action Router",
+            "node": "AI Data Enrichement",
             "type": "main",
             "index": 0
-          }
-        ]
-      ]
-    },
-    "Action Router": {
-      "main": [
-        [
+          },
           {
-            "node": "Mock Enrichment",
+            "node": "Merge",
             "type": "main",
-            "index": 0
+            "index": 1
           }
         ],
         [
           {
-            "node": "Delete Record Formatter",
+            "node": "AI Agent - Interact w/t Algolia",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Mock Enrichment": {
+    "AI Data Enrichement": {
       "main": [
         [
           {
-            "node": "Algolia Record Formatter",
+            "node": "Merge",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Algolia Record Formatter": {
+    "AI Agent - Interact w/t Algolia": {
       "main": [
         [
           {
-            "node": "Save to Algolia",
+            "node": "Respond to Webhook",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Save to Algolia": {
+    "JSON Output (1)": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "AI Data Enrichement",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Claude 4 Sonnet (1)": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Data Enrichement",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Clause 4 Sonnet (2)": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent - Interact w/t Algolia",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Algolia MCP (2)": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent - Interact w/t Algolia",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge": {
       "main": [
         [
           {
-            "node": "Success Response",
+            "node": "Reshape JSON",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Delete Record Formatter": {
+    "Reshape JSON": {
       "main": [
         [
           {
-            "node": "Soft Delete in Algolia",
+            "node": "AI Agent - Interact w/t Algolia",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Soft Delete in Algolia": {
-      "main": [
+    "Structured Output Parser": {
+      "ai_outputParser": [
         [
           {
-            "node": "Success Response",
-            "type": "main",
+            "node": "AI Agent - Interact w/t Algolia",
+            "type": "ai_outputParser",
             "index": 0
           }
         ]
       ]
     }
   },
-  "active": false,
+  "active": true,
   "settings": {
     "executionOrder": "v1"
   },
-  "versionId": "639cda1f-9b5d-4675-9128-8c2d98733e47",
+  "versionId": "4e7817a1-909b-4838-979f-a1c32d67ee48",
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "4e839a74f9cee9cae404b83e2a9088ce8b38f21e009880813cc56e5bb8aa4410"
   },
-  "id": "XeMSwfCQQQTq8Jc4",
+  "id": "nMjLayRlj1FXNsj4",
   "tags": []
 }
